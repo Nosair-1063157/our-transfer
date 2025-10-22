@@ -5,9 +5,10 @@ from datetime import datetime, date
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import sqlite3
 
-from werkzeug.utils import secure_filename, send_file
+from flask import send_file
+from werkzeug.utils import secure_filename
 
-from encryptor import encrypt_text, decrypt_text, decrypt_file, load_key
+from encryptor import encrypt_text, decrypt_text, decrypt_file, load_key, encrypt_file
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = "uploads/"
@@ -55,20 +56,24 @@ def upload():
             return "Geen bestand geupload", 400
 
     #slaat het bestand tijdelijk op
-    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
-    file.save(temp_path)
-    return "Bestand succesvol geupload", 200
+        temp_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
+        file.save(temp_path)
+
 
     #versleutelen van het bestand
-    encrypted_path = encrypt_file(temp_path)
-    file_id = str(uuid.uuid4())
-    new_name = os.path.join(app.config['ENCRYPTED_FOLDER'], file_id + ".enc")
-    os.rename(encrypted_path, new_name)
+        encrypted_path = encrypt_file(temp_path)
+        file_id = str(uuid.uuid4())
+        new_name = os.path.join(app.config['ENCRYPTED_FOLDER'], file_id + ".enc")
+        os.replace(encrypted_path, new_name)
 
-    os.remove(temp_path)
+        try:
+            os.remove(temp_path)
+        except FileNotFoundError:
+            pass
+        link= url_for('download', file_id=file_id, _external=True)
+        return render_template('upload.html', download_link=link)
 
-    link= url_for('download', file_id=file_id, _external=True)
-    return f"Bestand succesvol geupload. Download link: {link}", 200
+    return render_template('upload.html')
 
 @app.route("/download/<file_id>")
 def download(file_id):
