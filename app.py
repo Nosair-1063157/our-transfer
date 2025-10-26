@@ -30,22 +30,28 @@ def home():
 
 @app.route("/encrypt", methods=["GET", "POST"])
 def encrypt():
+    encrypted_text = None
     if request.method == "POST":
         text = request.form['text']
         print("tekst te encrypten:", text)
-        encypted_text = encrypt_text(text)
-        print("Encrypted text:", encypted_text)
-        return render_template('encrypt.html', encrypted_text=encypted_text)
+        encrypted_text = encrypt_text(text)
+        print("Encrypted text:", encrypted_text)
+        encrypted_text = encrypted_text.decode()
+        return render_template('encrypt.html', encrypted_text=encrypted_text)
     return render_template('encrypt.html')
 
 @app.route("/decrypt", methods=["GET", "POST"])
 def decrypt():
     if request.method == "POST":
-        text = request.form['text']
-        print("tekst te decrypten:", text)
-        decrypted_text = decrypt_text(text)
-        print("Decrypted text:", decrypted_text)
-        return render_template('decrypt.html', decrypted_text=decrypted_text)
+        token = request.form['token'].strip()
+
+        try:
+            decrypted_text = decrypt_text(token)
+            print("Decrypted text:", decrypted_text)
+        except Exception as e:
+            print("Decryptiefout:", e)
+
+        return render_template("decrypt.html", decrypted_text=decrypted_text)
     return render_template('decrypt.html')
 
 @app.route("/upload", methods=["GET", "POST"])

@@ -4,15 +4,24 @@
 
 <div class="container">
     <div class="center">
-        <h1>Welkom</h1>
-        <form action="" method="POST">
-            <div class="txt_field">
-                <input type="text" name="username" required>
-                <span></span>
-                <label>Decrypt</label>
+        <h1>Decrypt tekst</h1>
+        <form method="POST" action="">
+            <div class="mb-3">
+                <label for="token" id = token class="form-label">Voer de Token in die je wilt decrypten:</label>
+                <textarea name="token" class="form-control" rows="4" placeholder="Typ hier je tekst..." required></textarea>
             </div>
-            <input name="submit" type="submit" value="Login">
+            <div class="text-center">
+                <button type="submit" class="btn btn-success">Decrypten</button>
+            </div>
         </form>
+
+        {% if decrypted_text %}
+        <hr>
+        <div class="mt-4">
+            <h3>Decrypted Tekst:</h3>
+            <pre class="bg-light p-3 border rounded">{{ decrypted_text }}</pre>
+            </div>
+        {% endif %}
     </div>
 </div>
 
