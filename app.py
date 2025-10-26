@@ -22,10 +22,8 @@ app.secret_key = "geheim"
 
 load_key()
 
-
-
 @app.route("/", methods=["GET", "POST"])
-def encrypt():
+def s_encrypt():
     encrypted_text = None
     if request.method == "POST":
         text = request.form['text']
@@ -37,7 +35,7 @@ def encrypt():
     return render_template('encrypt.html')
 
 @app.route("/decrypt", methods=["GET", "POST"])
-def decrypt():
+def s_decrypt():
     if request.method == "POST":
         token = request.form['token'].strip()
 
@@ -49,6 +47,11 @@ def decrypt():
 
         return render_template("decrypt.html", decrypted_text=decrypted_text)
     return render_template('decrypt.html')
+
+# @app.route("/a_encrypt", methods=["GET", "POST"])
+# def a_encrypt():
+#     if request_method == "POST":
+
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():

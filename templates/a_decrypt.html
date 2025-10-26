@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+    <div class="center">
+        <h1>Encrypt tekst</h1>
+        <form method="POST" action="">
+            <div class="mb-3">
+                <label for="text" class="form-label">Voer de tekst in die je wilt versleutelen:</label>
+                <textarea name="text" id="text" class="form-control" rows="4" placeholder="Typ hier je tekst..." required></textarea>
+            </div>
+            <div class="text-center">
+                <button type="submit" class="btn btn-success">Versleutelen</button>
+            </div>
+        </form>
+
+        {% if encrypted_text %}
+        <hr>
+        <div class="mt-4">
+            <h3>Versleutelde Tekst:</h3>
+            <pre class="bg-light p-3 border rounded">{{ encrypted_text }}</pre>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
