@@ -27,3 +27,11 @@ def generate_rsa_keys(key_size=2048):
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PublicFormat.SubjectPublicKeyInfo
             ))
+
+        print("Nieuwe Public en Private key zijn generated en opgeslagen in de keys map lol")
+    else:
+        print("Public en Private key bestaan al in de keys map lol")
+
+
+
+

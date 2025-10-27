@@ -1,11 +1,14 @@
 import os
 import uuid
 
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import padding
 from flask import Flask, render_template, request, url_for
 
 from flask import send_file
 from werkzeug.utils import secure_filename
 
+from Controller.Asymmetric_Controller import generate_rsa_keys
 from Controller.Symmetric_Controller import encrypt_text, decrypt_text, load_key
 from Controller.Upload_Controller import decrypt_file, encrypt_file
 
@@ -19,8 +22,6 @@ os.makedirs(app.config['DECRYPTED_FOLDER'], exist_ok=True)
 
 
 app.secret_key = "geheim"
-
-load_key()
 
 @app.route("/", methods=["GET", "POST"])
 def s_encrypt():
@@ -80,6 +81,59 @@ def upload():
 
     return render_template('upload.html')
 
+@app.route("/a_encrypt", methods=["GET", "POST"])
+def a_encrypt():
+    encrypted_text = None
+    if request.method == "POST":
+        text = request.form['text']
+        print("tekst te encrypten:", text)
+        generate_rsa_keys()
+
+        with open("keys/public_key.pem", "rb") as key_file:
+            public_key = serialization.load_pem_public_key(key_file.read())
+
+        encrypted_stuff = public_key.encrypt(
+            text.encode(),
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+        encrypted_text = encrypted_stuff.hex()
+        print("Encrypted text:", encrypted_text)
+        return render_template('a_encrypt.html', encrypted_text=encrypted_text)
+    return render_template('a_encrypt.html')
+
+@app.route("/a_decrypt", methods=["GET", "POST"])
+def a_decrypt():
+    decrypted_text = None
+    if request.method == "POST":
+        token = request.form['token'].strip()
+        print("te decrypten token:", token)
+        generate_rsa_keys()
+
+        with open("keys/private_key.pem", "rb") as key_file:
+            private_key = serialization.load_pem_private_key(
+                key_file.read(),
+                password=None,
+            )
+        try:
+            decrypted_stuff = private_key.decrypt(
+                bytes.fromhex(token),
+                padding.OAEP(
+                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                    algorithm=hashes.SHA256(),
+                    label=None
+                )
+            )
+            decrypted_text = decrypted_stuff.decode()
+            print("Decrypted text:", decrypted_text)
+        except Exception as e:
+            print("Decryptiefout:", e)
+        return render_template("a_decrypt.html", decrypted_text=decrypted_text)
+    return render_template('a_decrypt.html')
+
 @app.route("/download/<file_id>")
 def download(file_id):
     encrypted_path = os.path.join(app.config['ENCRYPTED_FOLDER'], file_id + ".enc")
@@ -93,3 +147,5 @@ def download(file_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+    load_key()
+    generate_rsa_keys()
