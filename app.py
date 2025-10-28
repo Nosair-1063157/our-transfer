@@ -1,5 +1,6 @@
 import os
 import uuid
+from datetime import datetime, timedelta
 
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -13,6 +14,9 @@ from Controller.Symmetric_Controller import encrypt_text, decrypt_text, load_key
 from Controller.Upload_Controller import decrypt_file, encrypt_file
 
 app = Flask(__name__)
+
+temporary_links = {}
+
 app.config['UPLOAD_FOLDER'] = "uploads/"
 app.config['ENCRYPTED_FOLDER'] = "uploads/encrypted/"
 app.config['DECRYPTED_FOLDER'] = "uploads/decrypted/"
@@ -71,6 +75,11 @@ def upload():
         file_id = str(uuid.uuid4())
         new_name = os.path.join(app.config['ENCRYPTED_FOLDER'], file_id + ".enc")
         os.replace(encrypted_path, new_name)
+
+        temporary_links[file_id] = {
+            'path': new_name,
+            'expires_at': datetime.now() + timedelta(minutes=60)
+        }
 
         try:
             os.remove(temp_path)
@@ -136,6 +145,16 @@ def a_decrypt():
 
 @app.route("/download/<file_id>")
 def download(file_id):
+
+    file = temporary_links.get(file_id)
+    if not file:
+        return "Woops ongeldige of verlopen link", 404
+
+    if datetime.now() > file['expires_at']:
+        del temporary_links[file_id]
+        return "Woops de link is verlopen na een uurtje", 403
+
+
     encrypted_path = os.path.join(app.config['ENCRYPTED_FOLDER'], file_id + ".enc")
     if not os.path.exists(encrypted_path):
         return "Bestand niet gevonden", 404
