@@ -67,7 +67,7 @@ def upload():
 
 
     #versleutelen van het bestand
-        encrypted_path = encrypt_file(temp_path)
+        encrypted_path, checksum = encrypt_file(temp_path)
         file_id = str(uuid.uuid4())
         new_name = os.path.join(app.config['ENCRYPTED_FOLDER'], file_id + ".enc")
         os.replace(encrypted_path, new_name)
@@ -77,9 +77,9 @@ def upload():
         except FileNotFoundError:
             pass
         link= url_for('download', file_id=file_id, _external=True)
-        return render_template('upload.html', download_link=link)
+        return render_template('upload.html', download_link=link, checksum=checksum)
 
-    return render_template('upload.html')
+    return render_template('upload.html', )
 
 @app.route("/a_encrypt", methods=["GET", "POST"])
 def a_encrypt():
