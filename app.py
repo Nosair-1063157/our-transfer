@@ -165,6 +165,6 @@ def download(file_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
     load_key()
     generate_rsa_keys()
