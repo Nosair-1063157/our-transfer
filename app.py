@@ -15,8 +15,10 @@ from Controller.Upload_Controller import decrypt_file, encrypt_file
 
 app = Flask(__name__)
 
+
 temporary_links = {}
 
+#Het maken van encrypted en decrypted folders
 app.config['UPLOAD_FOLDER'] = "uploads/"
 app.config['ENCRYPTED_FOLDER'] = "uploads/encrypted/"
 app.config['DECRYPTED_FOLDER'] = "uploads/decrypted/"
@@ -25,16 +27,18 @@ os.makedirs(app.config['ENCRYPTED_FOLDER'], exist_ok=True)
 os.makedirs(app.config['DECRYPTED_FOLDER'], exist_ok=True)
 
 
-app.secret_key = "geheim"
-
 @app.route("/", methods=["GET", "POST"])
 def s_encrypt():
     encrypted_text = None
     if request.method == "POST":
         text = request.form['text']
         print("tekst te encrypten:", text)
+
+        #het text versleutelen met encrypt_text met Fernet
         encrypted_text = encrypt_text(text)
         print("Encrypted text:", encrypted_text)
+
+        # bytes omzetten naar string om het te laten zien in html
         encrypted_text = encrypted_text.decode()
         return render_template('encrypt.html', encrypted_text=encrypted_text)
     return render_template('encrypt.html')
@@ -53,54 +57,66 @@ def s_decrypt():
         return render_template("decrypt.html", decrypted_text=decrypted_text)
     return render_template('decrypt.html')
 
-# @app.route("/a_encrypt", methods=["GET", "POST"])
-# def a_encrypt():
-#     if request_method == "POST":
 
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
+
+    #check of er een bestand is geupload
     if request.method == "POST":
         file = request.files['file']
         if not file:
+            #geen bestand, krijg je lekker een 400 error BAD REQUEST!!!!
             return "Geen bestand geupload", 400
 
-    #slaat het bestand tijdelijk op
+    #slaat het bestand tijdelijk op in de upload map
         temp_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
         file.save(temp_path)
 
 
-    #versleutelen van het bestand
+    #versleutelen van het bestand met checksum
         encrypted_path, checksum = encrypt_file(temp_path)
+        #genereerd een unieke bestand id voor tijdelijke opslag
         file_id = str(uuid.uuid4())
         new_name = os.path.join(app.config['ENCRYPTED_FOLDER'], file_id + ".enc")
         os.replace(encrypted_path, new_name)
 
+    #tijdelijke link dat na een uur verloopt
         temporary_links[file_id] = {
             'path': new_name,
             'expires_at': datetime.now() + timedelta(minutes=60)
         }
 
+    #Het verwijderen van de originele bestand om datalekken te voorkomen, lekker veilig
         try:
             os.remove(temp_path)
         except FileNotFoundError:
             pass
+
+    #Genererern van de downloadlink
         link= url_for('download', file_id=file_id, _external=True)
         return render_template('upload.html', download_link=link, checksum=checksum)
 
     return render_template('upload.html', )
 
+#assymetrisch encryptie
 @app.route("/a_encrypt", methods=["GET", "POST"])
 def a_encrypt():
     encrypted_text = None
     if request.method == "POST":
         text = request.form['text']
         print("tekst te encrypten:", text)
+
+        #Het genereren van de rsa keys
         generate_rsa_keys()
 
+
+        #het openen van de publieke sleutel
         with open("keys/public_key.pem", "rb") as key_file:
             public_key = serialization.load_pem_public_key(key_file.read())
 
+
+        # encrypt de tekst met OAEP padding en SHA256 hashing, super veilig, wedden voor 5 euro?
         encrypted_stuff = public_key.encrypt(
             text.encode(),
             padding.OAEP(
@@ -114,6 +130,7 @@ def a_encrypt():
         return render_template('a_encrypt.html', encrypted_text=encrypted_text)
     return render_template('a_encrypt.html')
 
+#assymetrisch decrypten
 @app.route("/a_decrypt", methods=["GET", "POST"])
 def a_decrypt():
     decrypted_text = None
@@ -122,6 +139,7 @@ def a_decrypt():
         print("te decrypten token:", token)
         generate_rsa_keys()
 
+        # het openen van de private key
         with open("keys/private_key.pem", "rb") as key_file:
             private_key = serialization.load_pem_private_key(
                 key_file.read(),

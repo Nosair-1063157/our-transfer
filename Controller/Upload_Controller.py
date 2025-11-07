@@ -12,6 +12,7 @@ encrypted_dir = os.path.join(upload_dir, "encrypted")
 decrypted_dir = os.path.join(upload_dir, "decrypted")
 
 
+# het encrypten van de file
 def encrypt_file(file_path):
     key = load_key()
     f =Fernet(key)
@@ -19,6 +20,7 @@ def encrypt_file(file_path):
     with open(file_path, "rb") as file:
         file_data = file.read()
 
+    #checksum implementeren
     checksum = hashlib.sha256(file_data).hexdigest()
     encrypted_data = f.encrypt(file_data)
 
@@ -31,7 +33,7 @@ def encrypt_file(file_path):
     print("Checken en de sum is" , checksum)
     return encrypted_file_path , checksum
 
-
+    #het decrypten van de file
 def decrypt_file(encrypted_file_path):
     key = load_key()
     f = Fernet(key)
@@ -49,7 +51,7 @@ def decrypt_file(encrypted_file_path):
     print("bestand ontsleuteld en opgeslagen als:", decrypted_file_path)
     return decrypted_file_path
 
-
+    
 def checksum(file_path):
 
     hash= hashlib.sha256()
